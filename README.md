@@ -136,7 +136,7 @@ High-level wrapper around Deepgram live transcription.
 
 *   `run()`: Run until `.stop()` or Ctrl-C.
 *   `stop()`: Public request to shut down; may be called from any thread.
-*   `pause()`: Pause writing transcripts to `output_path` (callback still runs).
+*   `pause()`: Pause writing transcripts to `output_path`. Note that the callback function will continue to receive transcription data while paused.
 *   `resume()`: Resume writing transcripts to `output_path`.
 
 ## Dependencies
