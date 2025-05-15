@@ -1,5 +1,5 @@
 """
-livetranscriber.py v0.2.1
+livetranscriber.py v0.2.2
 ---------------------
 A zero-dependency **single-file** helper that streams microphone audio to
 Deepgram for real-time speech-to-text.  You import :class:`LiveTranscriber`, hand
@@ -145,6 +145,7 @@ class LiveTranscriber:
         self._loop: asyncio.AbstractEventLoop | None = None
         self._done_evt = asyncio.Event()
         self._finishing = False
+        self._keyboard_interrupt_received = False
 
         # Mic/audio plumbing
         self._audio_q: "queue.Queue[np.ndarray]" = queue.Queue()
@@ -167,6 +168,7 @@ class LiveTranscriber:
         if self._finishing:
             return
         self._finishing = True
+        print("\nShutting down…") # Print shutdown message once
 
         if self._loop and not self._loop.is_closed():
             asyncio.run_coroutine_threadsafe(self._finish_and_cleanup(), self._loop)
@@ -191,6 +193,7 @@ class LiveTranscriber:
             asyncio.run(self._run_main())
         except KeyboardInterrupt:
             print("\nInterrupted – shutting down…")
+            self._keyboard_interrupt_received = True
             self.stop()
             asyncio.run(self._wait_for_cleanup())
 
@@ -229,7 +232,7 @@ class LiveTranscriber:
         try:
             await self._done_evt.wait()
         finally:
-            if not self._finishing:
+            if not self._finishing and not self._keyboard_interrupt_received:
                 await self._finish_and_cleanup()
 
     # ---------------------------------------------------------------------
@@ -265,7 +268,7 @@ class LiveTranscriber:
         self.stop()
 
     def _on_close(self, *_):
-        print("🔚  Deepgram connection closed")
+        # Connection closure is part of the cleanup; don't print here
         self.stop()
 
     # ---------------------------------------------------------------------
@@ -306,16 +309,22 @@ class LiveTranscriber:
         if self._mic:
             self._mic.stop()
             self._mic.close()
+            self._mic = None # Mark mic as cleaned up
 
         # Deepgram session
-        try:
-            await asyncio.to_thread(self._ws.finish)
-        except Exception as exc:  # noqa: BLE001 (broad OK – just logging)
-            print(f"⚠️  Error during WS finish: {exc}")
+        # Ensure finish is called only once
+        if self._ws:
+            try:
+                await asyncio.to_thread(self._ws.finish)
+            except Exception as exc:  # noqa: BLE001 (broad OK – just logging)
+                print(f"⚠️  Error during WS finish: {exc}")
+            finally:
+                self._ws = None # Mark websocket as cleaned up
 
         # File
         if self._out_fp:
             self._out_fp.close()
+            self._out_fp = None # Mark file as cleaned up
 
         self._done_evt.set()
 
