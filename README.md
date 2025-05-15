@@ -76,7 +76,7 @@ A more detailed example demonstrating various features like output to file and p
 import time
 from livetranscriber import LiveTranscriber
 
-def comprehensive_callback(transcriber: LiveTranscriber, text: str):
+def comprehensive_callback(text: str):
     """A callback function demonstrating pause/resume and stopping."""
     print("TRANSCRIPT >", text)
 
