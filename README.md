@@ -44,7 +44,7 @@ pip install -r requirements.txt
 
 ## Environment Setup
 
-Export your Deepgram API key (see https://console.deepgram.com):
+Export your Deepgram API key (see https://console.deepgram.com). For persistent access, add the following line to your shell profile file (e.g., `~/.zshrc`, `~/.bashrc`, or `~/.profile`) and restart your terminal or source the file:
 
 ```bash
 export DEEPGRAM_API_KEY="dg_…"
@@ -52,77 +52,26 @@ export DEEPGRAM_API_KEY="dg_…"
 
 ## Example Usage
 
-Here is a more comprehensive example demonstrating various features:
+Here is a minimal example to get you started:
 
 ```python
-import time
 from livetranscriber import LiveTranscriber
 
-def comprehensive_callback(transcriber: LiveTranscriber, text: str):
-    """A callback function demonstrating pause/resume and stopping."""
-    print("TRANSCRIPT >", text)
+def simple_callback(text: str):
+    """A simple callback that prints the transcript."""
+    print("NEW >", text)
 
-    # Example: Pause transcription if a specific phrase is detected
-    if "pause recording" in text.lower():
-        print("PAUSING...")
-        transcriber.pause()
-        print("RECORDING PAUSED. Say 'resume recording' to continue.")
-
-    # Example: Resume transcription if another phrase is detected
-    if "resume recording" in text.lower():
-        print("RESUMING...")
-        transcriber.resume()
-        print("RECORDING RESUMED.")
-
-    # Example: Stop transcription if a stop phrase is detected
-    if "stop recording" in text.lower():
-        print("STOPPING...")
-        transcriber.stop()
-
-# Instantiate with various options
-output_file = "transcript_output.txt"
-transcriber = LiveTranscriber(
-    callback=comprehensive_callback,
-    output_path=output_file, # Output transcript to a file
-    model="nova-3-general", # Specify a model
-    language="en-US",     # Specify a language
-    punctuate=True,         # Enable punctuation
-    smart_format=True       # Enable smart formatting (like numbers)
-)
+# Instantiate with the mandatory callback
+tr = LiveTranscriber(callback=simple_callback)
 
 try:
-    print(f"Starting transcription. Transcript will also be saved to {output_file}")
-    print("Press Ctrl+C to stop, or say 'pause recording', 'resume recording', or 'stop recording'.")
-    transcriber.run() # Blocks until stop() is called or Ctrl+C is pressed
+    print("Starting transcription. Press Ctrl+C to stop.")
+    tr.run() # Blocks until stop() is called or Ctrl-C is pressed
 except KeyboardInterrupt:
     print("\nCtrl+C detected. Stopping.")
 finally:
-    # Clean up resources if necessary (though stop() should handle most)
     print("Transcription ended.")
 
-## API
+Here is a more comprehensive example demonstrating various features:
 
-### `LiveTranscriber` Class
-
-High-level wrapper around Deepgram live transcription.
-
-**Parameters:**
-
-*   `callback`: A function that will be invoked for every final transcript. Must accept a single `str` argument. May be sync or async.
-*   `output_path` (Optional): Path to a text file that will receive each final transcript line (UTF-8).
-*   `api_key` (Optional): Your Deepgram API key. If omitted, the `DEEPGRAM_API_KEY` environment variable is used; failing both raises `RuntimeError`.
-*   `keepalive` (Optional): If `True` (default) the WebSocket client sends keepalive pings.
-*   `**live_options_overrides` (Optional): Any keyword argument that matches a *LiveOptions* field overrides the built-in defaults. For example, `punctuate=False`.
-
-**Methods:**
-
-*   `run()`: Run until `.stop()` or Ctrl-C.
-*   `stop()`: Public request to shut down; may be called from any thread.
-*   `pause()`: Pause writing transcripts to `output_path` (callback still runs).
-*   `resume()`: Resume writing transcripts to `output_path`.
-
-## Dependencies
-
-*   `deepgram-sdk`
-*   `numpy`
-*   `sounddevice`
+```
