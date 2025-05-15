@@ -1,23 +1,23 @@
 """
-transcriber.py v0.1.1
+livetranscriber.py v0.1.1
 ---------------------
 A zero-dependency **single-file** helper that streams microphone audio to
-Deepgram for real-time speech-to-text.  You import :class:`Transcriber`, hand
-it a callback, and call :py:meth:`~Transcriber.run`.  Defaults can be
+Deepgram for real-time speech-to-text.  You import :class:`LiveTranscriber`, hand
+it a callback, and call :py:meth:`~LiveTranscriber.run`.  Defaults can be
 overridden at construction time.
 
 Example
 ~~~~~~~
->>> from transcriber import Transcriber
+>>> from livetranscriber import LiveTranscriber
 >>> def on_text(text: str):
 ...     print("NEW>", text)
 ...
->>> tr = Transcriber(callback=on_text, model="nova-3-general", language="en-US")
+>>> tr = LiveTranscriber(callback=on_text, model="nova-3-general", language="en-US")
 >>> tr.run()  # blocks until you press Ctrl-C
 
 Key features
 ~~~~~~~~~~~~
-* **Simple API** - single `Transcriber` class.
+* **Simple API** - single `LiveTranscriber` class.
 * **Configurable** - every Deepgram *LiveOptions* parameter can be overridden
   via keyword arguments; sensible Nova-3 defaults are provided.
 * **Mandatory callback** - forces the calling code to supply a function that
@@ -71,7 +71,7 @@ from deepgram import (
 )
 
 __all__ = [
-    "Transcriber",
+    "LiveTranscriber",
 ]
 
 # ---------------------------------------------------------------------------
@@ -84,7 +84,7 @@ def _default_live_options() -> Mapping[str, Any]:
     """Return *Python* dict of Deepgram LiveOptions defaults.
 
     Represented as a plain mapping so callers can `**override`.  The mapping
-    is converted to :class:`LiveOptions` in :pyclass:`Transcriber`.
+    is converted to :class:`LiveOptions` in :pyclass:`LiveTranscriber`.
     """
 
     return {
@@ -106,7 +106,7 @@ def _default_live_options() -> Mapping[str, Any]:
 # ---------------------------------------------------------------------------
 
 
-class Transcriber:
+class LiveTranscriber:
     """High-level wrapper around Deepgram live transcription.
 
     Parameters
@@ -334,7 +334,7 @@ class Transcriber:
 
 
 # ---------------------------------------------------------------------------
-# Strongly‑typed convenience factory (optional): Transcriber.from_defaults()
+# Strongly‑typed convenience factory (optional): LiveTranscriber.from_defaults()
 # ---------------------------------------------------------------------------
 
     @classmethod
@@ -342,12 +342,12 @@ class Transcriber:
         cls,
         callback: Callable[[str], Any],
         **overrides: Any,
-    ) -> "Transcriber":
+    ) -> "LiveTranscriber":
         """Alternate constructor mirroring :pyclass:`__init__` but without *api_key*.
 
         The primary motivation is terseness in simple scripts:
 
-            tr = Transcriber.from_defaults(on_text)
+            tr = LiveTranscriber.from_defaults(on_text)
             tr.run()
 
         """
