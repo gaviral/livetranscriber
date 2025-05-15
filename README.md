@@ -77,24 +77,23 @@ import time
 from livetranscriber import LiveTranscriber
 
 def comprehensive_callback(text: str):
-    """A callback function demonstrating pause/resume and stopping."""
-    print("TRANSCRIPT >", text)
+    print("Transcript received:", text)
 
     # Example: Pause transcription if a specific phrase is detected
     if "pause recording" in text.lower():
-        print("PAUSING...")
+        print("Status: PAUSING...")
         transcriber.pause()
-        print("RECORDING PAUSED. Say 'resume recording' to continue.")
+        print("Status: RECORDING PAUSED. Say 'resume recording' to continue.")
 
     # Example: Resume transcription if another phrase is detected
     if "resume recording" in text.lower():
-        print("RESUMING...")
+        print("Status: RESUMING...")
         transcriber.resume()
-        print("RECORDING RESUMED.")
+        print("Status: RECORDING RESUMED.")
 
     # Example: Stop transcription if a stop phrase is detected
     if "stop recording" in text.lower():
-        print("STOPPING...")
+        print("Status: STOPPING...")
         transcriber.stop()
 
 # Instantiate with various options
@@ -110,12 +109,12 @@ transcriber = LiveTranscriber(
 
 try:
     print(f"Starting transcription. Transcript will also be saved to {output_file}")
-    print("Press Ctrl+C to stop, or say 'pause recording', 'resume recording', or 'stop recording'.")
+    print("Instructions: Press Ctrl+C to stop, or say 'pause recording', 'resume recording', or 'stop recording'.")
     transcriber.run() # Blocks until stop() is called or Ctrl-C is pressed
 except KeyboardInterrupt:
-    print("\nCtrl+C detected. Stopping.")
+    print("\nInterrupted by user. Stopping.")
 finally:
-    print("Transcription ended.")
+    print("Transcription session ended.")
 ```
 
 ## API

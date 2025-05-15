@@ -1,5 +1,5 @@
 """
-livetranscriber.py v0.1.1
+livetranscriber.py v0.2.1
 ---------------------
 A zero-dependency **single-file** helper that streams microphone audio to
 Deepgram for real-time speech-to-text.  You import :class:`LiveTranscriber`, hand
