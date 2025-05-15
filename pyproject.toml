@@ -7,7 +7,7 @@ authors         = [
     { name = "Avi", email = "sixfold.fellas4a@icloud.com" }
 ]
 license         = "MIT"
-requires-python = ">=3.11"
+requires-python = "==3.11.*"
 keywords        = [
     "transcription",
     "speech-to-text",
@@ -21,17 +21,19 @@ classifiers     = [
     "Operating System :: OS Independent"
 ]
 dependencies    = [
-    "deepgram-sdk>=3,<4",
-    "numpy>=1.24",
-    "sounddevice>=0.4",
+    "deepgram-sdk>=4,<5",
+    "numpy>=1.24,<3",
+    "sounddevice>=0.5,<1",
 ]
 
 [project.urls]
 "Homepage" = "https://aviralgarg.com"
 "Source"   = "https://github.com/gaviral/livetranscriber"
+"Bug Tracker" = "https://github.com/gaviral/livetranscriber/issues"
+
 
 [build-system]
-requires = ["setuptools>=69", "wheel"]
+requires = ["setuptools>=61.0"]
 build-backend = "setuptools.build_meta"
 
 [project.scripts]

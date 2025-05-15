@@ -30,26 +30,13 @@ Key features
 * **Graceful shutdown** - Ctrl-C or :py:meth:`stop` shuts everything down and
   releases resources.
 
-Installation
-~~~~~~~~~~~~
-Add the following to *requirements.txt*:
-
-    deepgram-sdk>=4,<5
-    numpy>=1.24  # build-time requirement of sounddevice
-    sounddevice>=0.4
-
-Install with *uv* (preferred) or plain *pip*:
-
-    uv venv .venv && source .venv/bin/activate
-    uv pip install -r requirements.txt
-
 Environment
 ~~~~~~~~~~~
 Export your Deepgram API key (see https://console.deepgram.com):
 
     export DEEPGRAM_API_KEY="dg_…"
 
-Python ≥3.10 is required by the official SDK.
+Python 3.11 is required.
 """
 
 from __future__ import annotations
@@ -352,3 +339,40 @@ class LiveTranscriber:
 
         """
         return cls(callback=callback, **overrides)
+
+
+if __name__ == "__main__":
+    # This block allows the script to be run directly from the command line
+    # using the entry point defined in pyproject.toml
+    import argparse
+
+    parser = argparse.ArgumentParser(description="Live transcribe audio using Deepgram.")
+    parser.add_argument(
+        "--output",
+        help="Optional path to a text file to save the transcript."
+    )
+    parser.add_argument(
+        "--model",
+        default="nova-3-general",
+        help="Deepgram model to use (default: nova-3-general)."
+    )
+    parser.add_argument(
+        "--language",
+        default="en-US",
+        help="Language for transcription (default: en-US)."
+    )
+
+    args = parser.parse_args()
+
+    def print_text(text: str):
+        print("NEW>", text)
+
+    # Initialize and run the transcriber with command-line arguments
+    transcriber = LiveTranscriber.from_defaults(
+        callback=print_text,
+        output_path=args.output,
+        model=args.model,
+        language=args.language
+    )
+
+    transcriber.run()
