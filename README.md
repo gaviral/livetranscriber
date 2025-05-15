@@ -52,15 +52,53 @@ export DEEPGRAM_API_KEY="dg_…"
 
 ## Example Usage
 
+Here is a more comprehensive example demonstrating various features:
+
 ```python
+import time
 from livetranscriber import LiveTranscriber
 
-def on_text(text: str):
-    print("NEW>", text)
+def comprehensive_callback(transcriber: LiveTranscriber, text: str):
+    """A callback function demonstrating pause/resume and stopping."""
+    print("TRANSCRIPT >", text)
 
-tr = LiveTranscriber(callback=on_text, model="nova-3-general", language="en-US")
-tr.run()  # blocks until you press Ctrl-C
-```
+    # Example: Pause transcription if a specific phrase is detected
+    if "pause recording" in text.lower():
+        print("PAUSING...")
+        transcriber.pause()
+        print("RECORDING PAUSED. Say 'resume recording' to continue.")
+
+    # Example: Resume transcription if another phrase is detected
+    if "resume recording" in text.lower():
+        print("RESUMING...")
+        transcriber.resume()
+        print("RECORDING RESUMED.")
+
+    # Example: Stop transcription if a stop phrase is detected
+    if "stop recording" in text.lower():
+        print("STOPPING...")
+        transcriber.stop()
+
+# Instantiate with various options
+output_file = "transcript_output.txt"
+transcriber = LiveTranscriber(
+    callback=comprehensive_callback,
+    output_path=output_file, # Output transcript to a file
+    model="nova-3-general", # Specify a model
+    language="en-US",     # Specify a language
+    punctuate=True,         # Enable punctuation
+    smart_format=True       # Enable smart formatting (like numbers)
+)
+
+try:
+    print(f"Starting transcription. Transcript will also be saved to {output_file}")
+    print("Press Ctrl+C to stop, or say 'pause recording', 'resume recording', or 'stop recording'.")
+    transcriber.run() # Blocks until stop() is called or Ctrl+C is pressed
+except KeyboardInterrupt:
+    print("\nCtrl+C detected. Stopping.")
+finally:
+    # Clean up resources if necessary (though stop() should handle most)
+    print("Transcription ended.")
 
 ## API
 
