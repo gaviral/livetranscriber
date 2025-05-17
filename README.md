@@ -138,6 +138,30 @@ High-level wrapper around Deepgram live transcription.
 *   `pause()`: Pause writing transcripts to `output_path`. Note that the callback function will continue to receive transcription data while paused.
 *   `resume()`: Resume writing transcripts to `output_path`.
 
+## Development Standards
+
+This section outlines the standards and practices for contributing to `livetranscriber`.
+
+### Versioning
+
+`livetranscriber` follows [Semantic Versioning](https://semver.org/). The version number is managed in the following locations:
+
+*   `pyproject.toml`
+*   `uv.lock`
+*   The package docstring in `livetranscriber.py`
+
+When making changes that require a version bump:
+
+1.  Update the version number in all three locations according to Semantic Versioning principles.
+2.  Commit the changes using a [Conventional Commit](https://www.conventionalcommits.org/en/v1.0.0/) message.
+3.  Push the commit to the remote repository.
+4.  Create a Git tag corresponding to the new version number (e.g., `v0.2.2`).
+5.  Push the tag to the remote repository.
+
+### Tagging
+
+After pushing a new version commit, always create a Git tag for that version and push the tag. For version `x.y.z`, the tag name should be `vx.y.z`.
+
 ## Dependencies
 
 *   `deepgram-sdk`
