@@ -1,5 +1,5 @@
 """
-livetranscriber.py v0.2.2
+livetranscriber.py v0.2.3
 ---------------------
 A zero-dependency **single-file** helper that streams microphone audio to
 Deepgram for real-time speech-to-text.  You import :class:`LiveTranscriber`, hand
@@ -171,8 +171,10 @@ class LiveTranscriber:
         print("\nShutting down…") # Print shutdown message once
 
         if self._loop and not self._loop.is_closed():
-            asyncio.run_coroutine_threadsafe(self._finish_and_cleanup(), self._loop)
+            # Use call_soon_threadsafe to schedule cleanup in the main event loop
+            self._loop.call_soon_threadsafe(lambda: asyncio.create_task(self._finish_and_cleanup()))
         else:
+            # Fallback if loop is not available or closed (shouldn't happen in run)
             asyncio.run(asyncio.create_task(self._finish_and_cleanup()))
 
     def pause(self) -> None:
@@ -230,10 +232,19 @@ class LiveTranscriber:
 
         # Wait until shutdown (`_done_evt` is set).
         try:
+            # Await the event that will be set by _finish_and_cleanup
             await self._done_evt.wait()
         finally:
+            # If _done_evt was set, cleanup should already be running or done.
+            # This part might be redundant if _done_evt is the primary signal.
+            # Keep it for robustness, but the main exit relies on _done_evt.
             if not self._finishing and not self._keyboard_interrupt_received:
+                # This path is less likely now if stop() is called reliably
                 await self._finish_and_cleanup()
+
+        # Explicitly stop the loop after the event is set and cleanup starts/finishes
+        if self._loop and not self._loop.is_closed():
+             self._loop.stop()
 
     # ---------------------------------------------------------------------
     # Deepgram event callbacks (sync)
