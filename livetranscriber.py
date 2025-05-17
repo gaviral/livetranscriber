@@ -1,5 +1,5 @@
 """
-livetranscriber.py v0.2.3
+livetranscriber.py v0.2.4
 ---------------------
 A zero-dependency **single-file** helper that streams microphone audio to
 Deepgram for real-time speech-to-text.  You import :class:`LiveTranscriber`, hand
@@ -171,11 +171,14 @@ class LiveTranscriber:
         print("\nShutting down…") # Print shutdown message once
 
         if self._loop and not self._loop.is_closed():
-            # Use call_soon_threadsafe to schedule cleanup in the main event loop
-            self._loop.call_soon_threadsafe(lambda: asyncio.create_task(self._finish_and_cleanup()))
+            # First start the cleanup in the background
+            asyncio.run_coroutine_threadsafe(self._finish_and_cleanup(), self._loop)
+            
+            # Signal the main wait loop that it's done
+            self._loop.call_soon_threadsafe(self._done_evt.set)
         else:
-            # Fallback if loop is not available or closed (shouldn't happen in run)
-            asyncio.run(asyncio.create_task(self._finish_and_cleanup()))
+            # Fallback if loop is not available or closed
+            asyncio.run(self._finish_and_cleanup())
 
     def pause(self) -> None:
         """Pause writing transcripts to *output_path* (callback still runs)."""
@@ -234,17 +237,19 @@ class LiveTranscriber:
         try:
             # Await the event that will be set by _finish_and_cleanup
             await self._done_evt.wait()
+            
+            # Once _done_evt is set, ensure cleanup is complete before exiting
+            if self._finishing:
+                try:
+                    # Allow a little time for cleanup to finish
+                    await asyncio.sleep(0.5)
+                    print("✓ Exiting gracefully")
+                except asyncio.CancelledError:
+                    pass
         finally:
-            # If _done_evt was set, cleanup should already be running or done.
-            # This part might be redundant if _done_evt is the primary signal.
-            # Keep it for robustness, but the main exit relies on _done_evt.
+            # If _done_evt was set, cleanup should already be running or done
             if not self._finishing and not self._keyboard_interrupt_received:
-                # This path is less likely now if stop() is called reliably
                 await self._finish_and_cleanup()
-
-        # Explicitly stop the loop after the event is set and cleanup starts/finishes
-        if self._loop and not self._loop.is_closed():
-             self._loop.stop()
 
     # ---------------------------------------------------------------------
     # Deepgram event callbacks (sync)
@@ -337,7 +342,10 @@ class LiveTranscriber:
             self._out_fp.close()
             self._out_fp = None # Mark file as cleaned up
 
-        self._done_evt.set()
+        # Ensure this is always called to signal completion
+        if not self._done_evt.is_set():
+            self._done_evt.set()
+            print("✓ Cleanup completed")
 
 
 # ---------------------------------------------------------------------------
