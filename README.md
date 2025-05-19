@@ -9,6 +9,7 @@ A single-file helper with minimal external dependencies that streams microphone 
 *   **Mandatory callback** - forces the calling code to supply a function that will be invoked for every *final* transcript chunk (empty / interim chunks are ignored).
 *   **Output capture** - optional `output_path` writes each final transcript line to disk.
 *   **Pause / resume** - you may call `pause` or `resume` from your callback.
+*   **Offline mode** - `pause()` switches to [OpenAI Whisper](https://github.com/openai/whisper) locally until `resume()`.
 *   **Graceful shutdown** - Ctrl-C or `stop` shuts everything down and releases resources.
 
 ## Installation
@@ -25,7 +26,10 @@ Alternatively, if you are working with the source code or a specific requirement
 deepgram-sdk>=4,<5
 numpy>=1.24  # build-time requirement of sounddevice
 sounddevice>=0.4
+openai-whisper>=20240930  # optional: required for offline mode
 ```
+Whisper downloads its model the first time you use offline mode. For manual downloads see [the Whisper README](https://github.com/openai/whisper#available-models-and-languages).
+
 
 Install with `uv` (preferred) or plain `pip`:
 
@@ -126,6 +130,16 @@ except KeyboardInterrupt:
 finally:
     print("Transcription session ended.")
 ```
+### Pausing Activates Local Mode
+
+Calling `pause()` disconnects Deepgram and transcribes audio locally with Whisper until `resume()`:
+
+```python
+transcriber.pause()   # Whisper now processes audio offline
+# ... speak offline ...
+transcriber.resume()  # Deepgram connection restored
+```
+
 
 ## API
 
@@ -179,3 +193,4 @@ After pushing a new version commit, always create a Git tag for that version and
 *   `deepgram-sdk`
 *   `numpy`
 *   `sounddevice`
+*   `openai-whisper` (offline mode)
