@@ -12,7 +12,7 @@ FAKES = Path(__file__).resolve().parent / 'fakes'
 
 def load_module(monkeypatch):
     monkeypatch.syspath_prepend(str(FAKES))
-    for name in ('numpy', 'sounddevice', 'deepgram'):
+    for name in ('numpy', 'sounddevice', 'deepgram', 'whisper'):
         if name in sys.modules:
             del sys.modules[name]
     if 'livetranscriber.livetranscriber' in sys.modules:

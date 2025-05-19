@@ -51,7 +51,11 @@ from typing import Callable, Mapping, Any, Optional
 import numpy as np
 import sounddevice as sd
 from deepgram import LiveOptions
-from .transcribers import DeepgramTranscriber, BaseTranscriber
+from .transcribers import (
+    DeepgramTranscriber,
+    WhisperTranscriber,
+    BaseTranscriber,
+)
 
 __all__ = [
     "LiveTranscriber",
@@ -119,6 +123,7 @@ class LiveTranscriber:
         output_path: str | os.PathLike | None = None,
         api_key: Optional[str] = None,
         keepalive: bool = True,
+        whisper_model: str = "base",
         **live_overrides: Any,
     ) -> None:
         if callback is None:
@@ -134,12 +139,18 @@ class LiveTranscriber:
         opts = {**_default_live_options(), **live_overrides}
         self._live_opts = LiveOptions(**opts)  # type: ignore[arg-type]
 
-        self._transcriber: BaseTranscriber = DeepgramTranscriber(
+        self._dg_transcriber = DeepgramTranscriber(
             api_key=self._api_key,
             options=self._live_opts,
             callback=self._handle_transcript,
             keepalive=keepalive,
         )
+        self._whisper_transcriber = WhisperTranscriber(
+            sample_rate=self._live_opts.sample_rate,
+            callback=self._handle_transcript,
+            model_name=whisper_model,
+        )
+        self._active_transcriber: BaseTranscriber = self._dg_transcriber
 
         self._loop: asyncio.AbstractEventLoop | None = None
         self._done_evt = asyncio.Event()
@@ -181,10 +192,16 @@ class LiveTranscriber:
 
     def pause(self) -> None:
         """Pause writing transcripts to *output_path* (callback still runs)."""
+        self._dg_transcriber.close()
+        self._active_transcriber = self._whisper_transcriber
+        self._active_transcriber.connect()
         self.paused = True
 
     def resume(self) -> None:
         """Resume writing transcripts to *output_path*."""
+        self._whisper_transcriber.close()
+        self._active_transcriber = self._dg_transcriber
+        self._active_transcriber.connect()
         self.paused = False
 
     # ------------------------------------------------------------------
@@ -213,7 +230,7 @@ class LiveTranscriber:
     async def _run_main(self):  # noqa: C901 (acceptable in single file)
         self._loop = asyncio.get_running_loop()
 
-        self._transcriber.connect()
+        self._active_transcriber.connect()
         self._mic = sd.InputStream(
             channels=1,
             samplerate=self._live_opts.sample_rate,
@@ -279,7 +296,7 @@ class LiveTranscriber:
                 except queue.Empty:
                     await asyncio.sleep(0.002)
                     continue
-                self._transcriber.send(frame.tobytes())
+                self._active_transcriber.send(frame.tobytes())
         except asyncio.CancelledError:
             pass
 
@@ -300,14 +317,17 @@ class LiveTranscriber:
             self._mic.close()
             self._mic = None # Mark mic as cleaned up
 
-        # Transcriber session
-        if self._transcriber:
-            try:
-                await asyncio.to_thread(self._transcriber.close)
-            except Exception as exc:  # noqa: BLE001 (broad OK – just logging)
-                print(f"⚠️  Error during transcriber close: {exc}")
-            finally:
-                self._transcriber = None
+        # Transcriber sessions
+        for attr in ("_dg_transcriber", "_whisper_transcriber"):
+            transcriber: BaseTranscriber | None = getattr(self, attr, None)
+            if transcriber:
+                try:
+                    await asyncio.to_thread(transcriber.close)
+                except Exception as exc:  # noqa: BLE001
+                    print(f"⚠️  Error during transcriber close: {exc}")
+                finally:
+                    setattr(self, attr, None)
+        self._active_transcriber = None
 
         # File
         if self._out_fp:
