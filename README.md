@@ -142,6 +142,8 @@ High-level wrapper around Deepgram live transcription.
 
 This section outlines the standards and practices for contributing to `livetranscriber`.
 
+This project is distributed under the [MIT License](LICENSE).
+
 ### Versioning
 
 `livetranscriber` follows [Semantic Versioning](https://semver.org/). The version number is managed in the following locations:
