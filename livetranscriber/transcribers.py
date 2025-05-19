@@ -96,17 +96,35 @@ class WhisperTranscriber(BaseTranscriber):
         self._model = whisper.load_model(model_name)
         self._buffer = bytearray()
         self._sample_rate = sample_rate
+        self._silence_threshold = 500  # int16 amplitude for silence detection
+        self._silence_samples = 0
+        # flush when ~0.8s of silence encountered
+        self._max_silence_samples = int(0.8 * self._sample_rate)
 
     def connect(self) -> None:
         pass  # Nothing to do for Whisper
 
     def send(self, data: bytes) -> None:
         self._buffer.extend(data)
+        samples = np.frombuffer(data, dtype=np.int16)
+        if np.max(np.abs(samples)) < self._silence_threshold:
+            self._silence_samples += len(samples)
+        else:
+            self._silence_samples = 0
+        if self._silence_samples >= self._max_silence_samples:
+            self._flush()
+            self._silence_samples = 0
 
     def close(self) -> None:
+        self._flush()
+
+    def _flush(self) -> None:
         if not self._buffer:
             return
-        audio = np.frombuffer(self._buffer, dtype=np.int16).astype(np.float32) / 32768.0
+        audio = (
+            np.frombuffer(self._buffer, dtype=np.int16).astype(np.float32) / 32768.0
+        )
+        self._buffer.clear()
         result = self._model.transcribe(audio, language="en", fp16=False)
         for seg in result.get("segments", []):
             text = seg.get("text", "").strip()
