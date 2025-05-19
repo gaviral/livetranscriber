@@ -174,6 +174,12 @@ When making changes that require a version bump:
 
 After pushing a new version commit, always create a Git tag for that version and push the tag. For version `x.y.z`, the tag name should be `vx.y.z`.
 
+## Changelog
+
+### v0.3.1
+
+- Enable local transcription via pause.
+
 ## Dependencies
 
 *   `deepgram-sdk`
