@@ -38,3 +38,6 @@ build-backend = "setuptools.build_meta"
 
 [project.scripts]
 livetranscriber = "livetranscriber:LiveTranscriber.from_defaults"
+
+[tool.setuptools.package-data]
+"" = ["py.typed"]
