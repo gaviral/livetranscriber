@@ -50,6 +50,16 @@ Export your Deepgram API key (see https://console.deepgram.com). For persistent 
 export DEEPGRAM_API_KEY="dg_…"
 ```
 
+## Command Line Usage
+
+After installation you can invoke `livetranscriber` directly from the command line. This command starts listening to your microphone and prints final transcripts to the terminal.
+
+```bash
+livetranscriber --output transcript.txt --model nova-3-general --language en-US
+```
+
+The `--output` option writes each transcript line to the given file, while `--model` and `--language` control the Deepgram model and language.
+
 ## Example Usage
 
 Here are examples demonstrating how to use the `livetranscriber` package.
