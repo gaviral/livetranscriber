@@ -150,7 +150,7 @@ class LiveTranscriber:
             callback=self._handle_transcript,
             model_name=whisper_model,
         )
-        self._active_transcriber: BaseTranscriber = self._dg_transcriber
+        self._active_transcriber: BaseTranscriber | None = self._dg_transcriber
 
         self._loop: asyncio.AbstractEventLoop | None = None
         self._done_evt = asyncio.Event()
@@ -192,16 +192,20 @@ class LiveTranscriber:
 
     def pause(self) -> None:
         """Pause writing transcripts to *output_path* (callback still runs)."""
-        self._dg_transcriber.close()
+        if self._dg_transcriber:
+            self._dg_transcriber.close()
         self._active_transcriber = self._whisper_transcriber
-        self._active_transcriber.connect()
+        if self._active_transcriber:
+            self._active_transcriber.connect()
         self.paused = True
 
     def resume(self) -> None:
         """Resume writing transcripts to *output_path*."""
-        self._whisper_transcriber.close()
+        if self._whisper_transcriber:
+            self._whisper_transcriber.close()
         self._active_transcriber = self._dg_transcriber
-        self._active_transcriber.connect()
+        if self._active_transcriber:
+            self._active_transcriber.connect()
         self.paused = False
 
     # ------------------------------------------------------------------
@@ -230,7 +234,8 @@ class LiveTranscriber:
     async def _run_main(self):  # noqa: C901 (acceptable in single file)
         self._loop = asyncio.get_running_loop()
 
-        self._active_transcriber.connect()
+        if self._active_transcriber:
+            self._active_transcriber.connect()
         self._mic = sd.InputStream(
             channels=1,
             samplerate=self._live_opts.sample_rate,
@@ -296,7 +301,8 @@ class LiveTranscriber:
                 except queue.Empty:
                     await asyncio.sleep(0.002)
                     continue
-                self._active_transcriber.send(frame.tobytes())
+                if self._active_transcriber:
+                    self._active_transcriber.send(frame.tobytes())
         except asyncio.CancelledError:
             pass
 
