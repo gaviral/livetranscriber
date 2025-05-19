@@ -50,12 +50,8 @@ from typing import Callable, Mapping, Any, Optional
 
 import numpy as np
 import sounddevice as sd
-from deepgram import (
-    DeepgramClient,
-    DeepgramClientOptions,
-    LiveOptions,
-    LiveTranscriptionEvents,
-)
+from deepgram import LiveOptions
+from .transcribers import DeepgramTranscriber, BaseTranscriber
 
 __all__ = [
     "LiveTranscriber",
@@ -138,9 +134,12 @@ class LiveTranscriber:
         opts = {**_default_live_options(), **live_overrides}
         self._live_opts = LiveOptions(**opts)  # type: ignore[arg-type]
 
-        client_opts = DeepgramClientOptions(options={"keepalive": "true"}) if keepalive else None
-        self._dg_client = DeepgramClient(self._api_key, client_opts)
-        self._ws = self._dg_client.listen.websocket.v("1")
+        self._transcriber: BaseTranscriber = DeepgramTranscriber(
+            api_key=self._api_key,
+            options=self._live_opts,
+            callback=self._handle_transcript,
+            keepalive=keepalive,
+        )
 
         self._loop: asyncio.AbstractEventLoop | None = None
         self._done_evt = asyncio.Event()
@@ -214,12 +213,7 @@ class LiveTranscriber:
     async def _run_main(self):  # noqa: C901 (acceptable in single file)
         self._loop = asyncio.get_running_loop()
 
-        self._ws.on(LiveTranscriptionEvents.Open, self._on_open)
-        self._ws.on(LiveTranscriptionEvents.Transcript, self._on_transcript)
-        self._ws.on(LiveTranscriptionEvents.Error, self._on_error)
-        self._ws.on(LiveTranscriptionEvents.Close, self._on_close)
-
-        self._ws.start(self._live_opts)
+        self._transcriber.connect()
         self._mic = sd.InputStream(
             channels=1,
             samplerate=self._live_opts.sample_rate,
@@ -252,40 +246,19 @@ class LiveTranscriber:
                 await self._finish_and_cleanup()
 
     # ---------------------------------------------------------------------
-    # Deepgram event callbacks (sync)
+    # Transcript handling – invoked by BaseTranscriber
     # ---------------------------------------------------------------------
 
-    # Each handler signature must match expected Deepgram signature – we accept
-    # *args and **kwargs to stay version‑tolerant.
-
-    def _on_open(self, *_):
-        print("🟢  Deepgram connection established")
-
-    def _on_transcript(self, _client, result, **_):
-        # We only act on *final* transcripts; ignore interim / empty chunks
-        text = result.channel.alternatives[0].transcript.strip()
-        if not text:
-            return
-
-        # Fire the user callback – sync or async.
+    def _handle_transcript(self, text: str) -> None:
         maybe_coro = self._callback(text)
         if asyncio.iscoroutine(maybe_coro):
-            asyncio.create_task(maybe_coro)  # fire‑and‑forget
+            asyncio.create_task(maybe_coro)
 
-        # Optionally write to disk.
         if self._output_path and not self.paused:
             if self._out_fp is None:
                 self._out_fp = open(self._output_path, "a", encoding="utf-8")
             self._out_fp.write(text + "\n")
             self._out_fp.flush()
-
-    def _on_error(self, _client, exc, **_):
-        print(f"❌  Deepgram error: {exc}")
-        self.stop()
-
-    def _on_close(self, *_):
-        # Connection closure is part of the cleanup; don't print here
-        self.stop()
 
     # ---------------------------------------------------------------------
     # Mic callback – keeps RT‑safe path minimal and lock‑free.
@@ -306,7 +279,7 @@ class LiveTranscriber:
                 except queue.Empty:
                     await asyncio.sleep(0.002)
                     continue
-                self._ws.send(frame.tobytes())
+                self._transcriber.send(frame.tobytes())
         except asyncio.CancelledError:
             pass
 
@@ -327,15 +300,14 @@ class LiveTranscriber:
             self._mic.close()
             self._mic = None # Mark mic as cleaned up
 
-        # Deepgram session
-        # Ensure finish is called only once
-        if self._ws:
+        # Transcriber session
+        if self._transcriber:
             try:
-                await asyncio.to_thread(self._ws.finish)
+                await asyncio.to_thread(self._transcriber.close)
             except Exception as exc:  # noqa: BLE001 (broad OK – just logging)
-                print(f"⚠️  Error during WS finish: {exc}")
+                print(f"⚠️  Error during transcriber close: {exc}")
             finally:
-                self._ws = None # Mark websocket as cleaned up
+                self._transcriber = None
 
         # File
         if self._out_fp:
