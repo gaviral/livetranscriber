@@ -24,7 +24,7 @@ dependencies    = [
     "deepgram-sdk>=4,<5",
     "numpy>=1.24,<3",
     "sounddevice>=0.5,<1",
-    "vosk>=0.3",
+    "openai-whisper>=20231106",
 ]
 
 [project.urls]

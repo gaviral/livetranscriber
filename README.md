@@ -1,6 +1,6 @@
 # livetranscriber
 
-A single-file helper with minimal external dependencies that streams microphone audio to Deepgram for real-time speech-to-text. This is available as a package on PyPI.
+A single-file helper with minimal external dependencies that streams microphone audio to Deepgram for real-time speech-to-text. This is available as a package on PyPI. It also includes a `WhisperTranscriber` for fully offline transcription using the open-source OpenAI Whisper model.
 
 ## Features
 

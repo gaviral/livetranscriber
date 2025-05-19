@@ -1,7 +1,6 @@
 from __future__ import annotations
 
 import asyncio
-import json
 from abc import ABC, abstractmethod
 from typing import Callable, Any
 
@@ -11,7 +10,8 @@ from deepgram import (
     LiveOptions,
     LiveTranscriptionEvents,
 )
-import vosk
+import numpy as np
+import whisper
 
 
 class BaseTranscriber(ABC):
@@ -83,28 +83,35 @@ class DeepgramTranscriber(BaseTranscriber):
         print("🔴  Deepgram connection closed")
 
 
-class VoskTranscriber(BaseTranscriber):
-    """Offline transcriber using the Vosk library."""
+class WhisperTranscriber(BaseTranscriber):
+    """Offline transcriber using the OpenAI Whisper model."""
 
-    def __init__(self, sample_rate: int, callback: Callable[[str], Any], model_path: str = "model") -> None:
+    def __init__(
+        self,
+        sample_rate: int,
+        callback: Callable[[str], Any],
+        model_name: str = "base",
+    ) -> None:
         super().__init__(callback)
-        self._recognizer = vosk.KaldiRecognizer(vosk.Model(model_path), sample_rate)
+        self._model = whisper.load_model(model_name)
+        self._buffer = bytearray()
+        self._sample_rate = sample_rate
 
     def connect(self) -> None:
-        pass  # Nothing to do for Vosk
+        pass  # Nothing to do for Whisper
 
     def send(self, data: bytes) -> None:
-        if self._recognizer.AcceptWaveform(data):
-            text = json.loads(self._recognizer.Result()).get("text", "").strip()
+        self._buffer.extend(data)
+
+    def close(self) -> None:
+        if not self._buffer:
+            return
+        audio = np.frombuffer(self._buffer, dtype=np.int16).astype(np.float32) / 32768.0
+        result = self._model.transcribe(audio, language="en", fp16=False)
+        for seg in result.get("segments", []):
+            text = seg.get("text", "").strip()
             if text:
                 maybe_coro = self._callback(text)
                 if asyncio.iscoroutine(maybe_coro):
                     asyncio.create_task(maybe_coro)
-
-    def close(self) -> None:
-        text = json.loads(self._recognizer.FinalResult()).get("text", "").strip()
-        if text:
-            maybe_coro = self._callback(text)
-            if asyncio.iscoroutine(maybe_coro):
-                asyncio.create_task(maybe_coro)
 
