@@ -1,6 +1,6 @@
 [project]
 name            = "livetranscriber"
-version         = "0.3.8"
+version         = "0.3.9"
 description     = "Real-time microphone transcription with Deepgram using Python."
 readme          = "README.md"
 authors         = [
@@ -41,4 +41,4 @@ build-backend = "setuptools.build_meta"
 livetranscriber = "livetranscriber:LiveTranscriber.from_defaults"
 
 [tool.setuptools.package-data]
-"" = ["py.typed"]
+livetranscriber = ["py.typed"]
