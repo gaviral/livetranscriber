@@ -1,6 +1,6 @@
 [project]
 name            = "livetranscriber"
-version         = "0.3.10"
+version         = "0.3.11"
 description     = "Real-time microphone transcription with Deepgram using Python."
 readme          = "README.md"
 authors         = [
@@ -20,6 +20,7 @@ classifiers     = [
     "Programming Language :: Python :: 3",
     "Operating System :: OS Independent"
 ]
+py_modules = ["livetranscriber"]
 dependencies    = [
     "deepgram-sdk>=4,<5",
     "numpy>=1.24,<3",

@@ -1,6 +1,6 @@
 import sys
 import asyncio
-from livetranscriber.livetranscriber import LiveTranscriber
+from livetranscriber import LiveTranscriber
 
 def print_callback(text: str):
     # print("TRANSCRIPT:", text)
