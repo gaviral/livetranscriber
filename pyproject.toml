@@ -20,7 +20,6 @@ classifiers     = [
     "Programming Language :: Python :: 3",
     "Operating System :: OS Independent"
 ]
-py_modules = ["livetranscriber"]
 dependencies    = [
     "deepgram-sdk>=4,<5",
     "numpy>=1.24,<3",
@@ -39,6 +38,9 @@ build-backend = "setuptools.build_meta"
 
 [project.scripts]
 livetranscriber = "livetranscriber:LiveTranscriber.from_defaults"
+
+[tool.setuptools]
+py-modules = ["livetranscriber"]
 
 [tool.setuptools.package-data]
 livetranscriber = ["py.typed"]
