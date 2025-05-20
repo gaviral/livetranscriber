@@ -190,7 +190,7 @@ After pushing a new version commit, always create a Git tag for that version and
 
 ## Changelog
 
-### v0.3.3
+### v0.3.6
 
 - Enable local transcription via pause.
 

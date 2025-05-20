@@ -123,7 +123,7 @@ class LiveTranscriber:
         output_path: str | os.PathLike | None = None,
         api_key: Optional[str] = None,
         keepalive: bool = True,
-        whisper_model: str = "base",
+        whisper_model: str = "medium",
         **live_overrides: Any,
     ) -> None:
         if callback is None:
