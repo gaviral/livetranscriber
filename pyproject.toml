@@ -1,6 +1,6 @@
 [project]
 name            = "livetranscriber"
-version         = "0.3.0"
+version         = "0.3.8"
 description     = "Real-time microphone transcription with Deepgram using Python."
 readme          = "README.md"
 authors         = [
