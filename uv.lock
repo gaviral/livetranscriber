@@ -246,7 +246,7 @@ wheels = [
 
 [[package]]
 name = "livetranscriber"
-version = "0.3.12"
+version = "0.3.13"
 source = { editable = "." }
 dependencies = [
     { name = "deepgram-sdk" },
@@ -257,8 +257,8 @@ dependencies = [
 [package.metadata]
 requires-dist = [
     { name = "deepgram-sdk", specifier = ">=4,<5" },
-    { name = "numpy", specifier = ">=1.24,<3" },
-    { name = "sounddevice", specifier = ">=0.5,<1" },
+    { name = "numpy", specifier = ">=1.24" },
+    { name = "sounddevice", specifier = ">=0.4" },
 ]
 
 [[package]]

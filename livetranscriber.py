@@ -1,5 +1,5 @@
 """
-livetranscriber.py v0.3.12
+livetranscriber.py v0.3.13
 ---------------------
 A zero-dependency **single-file** helper that streams microphone audio to
 Deepgram for real-time speech-to-text.  You import :class:`LiveTranscriber`, hand
@@ -82,7 +82,7 @@ def _default_live_options() -> Mapping[str, Any]:
         "sample_rate": 16000,
         "punctuate": True,
         "interim_results": False,
-        "endpointing": 500,
+        "endpointing": 300,
         "smart_format": True,
         "numerals": False,
     }
